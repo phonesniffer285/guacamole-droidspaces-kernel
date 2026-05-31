@@ -7,38 +7,96 @@ jobs:
     steps:
     - name: Checkout this repo
       uses: actions/checkout@v4
+
     - name: Install dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y bc build-essential libncurses5-dev \
-          libssl-dev xz-utils git bison flex libelf-dev python3 \
+        sudo apt-get install -y \
+          bc build-essential libncurses5-dev libssl-dev \
+          xz-utils git bison flex libelf-dev python3 \
+          gcc-12 gcc-12-aarch64-linux-gnu \
           gcc-aarch64-linux-gnu binutils-aarch64-linux-gnu
+        # Force GCC 12 — GCC 15 breaks kallsyms on 4.14 kernels
+        sudo update-alternatives --install /usr/bin/aarch64-linux-gnu-gcc \
+          aarch64-linux-gnu-gcc /usr/bin/aarch64-linux-gnu-gcc-12 100 || true
+
     - name: Clone kernel source
       run: |
         git clone --depth=1 -b lineage-17.1 \
           https://github.com/LineageOS/android_kernel_oneplus_sm8150 \
           kernel-guacamole
+
     - name: Apply patches and config
       run: |
         cd kernel-guacamole
         git apply ../kernel-patches.diff || true
-        sed -i 's/#define __rticdata  __attribute__((section(".bss.rtic")))/#define __rticdata/' \
-          include/linux/init.h
-        sed -i '/^CORE_PATH.*smartboost/,/^endif$/c\obj-\$(CONFIG_SMART_BOOST) += smartboost/core/' coretech/Makefile
         cp ../kernel-config-backup .config
+
+        # ── Add missing DroidSpaces config flags ──────────────────────────
+        scripts/config \
+          --enable  POSIX_MQUEUE \
+          --enable  CGROUP_PIDS \
+          --enable  CGROUP_DEVICE \
+          --enable  CGROUP_NET_PRIO \
+          --enable  DEVTMPFS \
+          --enable  DEVTMPFS_MOUNT \
+          --enable  NF_TABLES \
+          --enable  NETFILTER_ADVANCED \
+          --enable  IP_NF_FILTER \
+          --enable  NETFILTER_XT_TARGET_MASQUERADE \
+          --enable  NETFILTER_XT_TARGET_TCPMSS \
+          --enable  NETFILTER_XT_MATCH_ADDRTYPE \
+          --enable  NF_CONNTRACK_NETLINK \
+          --enable  NF_NAT_REDIRECT \
+          --disable ANDROID_PARANOID_NETWORK
+
         make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- olddefconfig
-        grep -E 'PID_NS|IPC_NS|UTS_NS|TUN=|VETH=|SPECTRA_CAMERA|PAGE_OWNER|STMVL53L1' .config
+
+        # ── Fix OnePlus gaming mode undefined linker symbols ──────────────
+        printf "\nint game_start_state = 0;\nint game_rtt_wan_detect_flag = 0;\nint rtt_rear = 0;\nint sla_switch_enable = 0;\n" \
+          >> net/opsla/op_sla.c
+
+        # ── Fix all trace header include paths ────────────────────────────
+        find drivers -name "*trace.c" | sed 's|/[^/]*$||' | sort -u | while read dir; do
+          if ! grep -q 'ccflags-y.*-I\$(src)' "$dir/Makefile" 2>/dev/null; then
+            echo "ccflags-y += -I\$(src)" >> "$dir/Makefile"
+          fi
+        done
+
+        # ── Fix IPA FORTIFY_SOURCE ────────────────────────────────────────
+        echo 'CFLAGS_ipa.o := -U__FORTIFY_SOURCE' >> drivers/platform/msm/ipa/ipa_v3/Makefile
+        echo 'ccflags-y += -U__FORTIFY_SOURCE'    >> drivers/platform/msm/ipa/ipa_v3/Makefile
+
+        # ── Fix IPA subdirectory trace headers ───────────────────────────
+        find drivers/platform/msm/ipa -name "Makefile" | while read f; do
+          if ! grep -q 'ccflags-y.*-I\$(src)' "$f"; then
+            echo "ccflags-y += -I\$(src)" >> "$f"
+          fi
+        done
+
+        # ── Fix camera core headers ───────────────────────────────────────
+        echo "ccflags-y += -I\$(src)"             >> drivers/media/platform/msm/camera/cam_core/Makefile
+        echo "ccflags-y += -I\$(src)/../cam_utils" >> drivers/media/platform/msm/camera/cam_core/Makefile
+
+        # ── Fix GPU msm trace headers ─────────────────────────────────────
+        echo "ccflags-y += -I\$(src)" >> drivers/gpu/msm/Makefile
+
+        # ── Fix power supply Qualcomm warnings ───────────────────────────
+        echo "ccflags-y += -Wno-error -Wno-format -Wno-return-type -Wno-pointer-to-int-cast -Wno-implicit-int" \
+          >> drivers/power/supply/qcom/Makefile
+
     - name: Build kernel
       run: |
         cd kernel-guacamole
-        make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- \
+        make ARCH=arm64 \
+          CROSS_COMPILE=aarch64-linux-gnu- \
           KCFLAGS="-Wno-error -Wno-designated-init -Wno-maybe-uninitialized \
                    -Wno-format -Wno-return-type -Wno-implicit-int \
-                   -Wno-misleading-indentation -Wno-strict-prototypes \
-                   -U__FORTIFY_SOURCE" \
-          LDFLAGS_vmlinux="-z notext" \
-          -j$(nproc) 2>&1 | tee build.log || true
-        tail -20 build.log
+                   -Wno-misleading-indentation -U__FORTIFY_SOURCE" \
+          -j$(nproc) 2>&1 | tee build.log
+        echo "--- LAST 30 LINES ---"
+        tail -30 build.log
+
     - name: Upload kernel image
       if: always()
       uses: actions/upload-artifact@v4
@@ -46,6 +104,7 @@ jobs:
         name: Image.gz-dtb
         path: kernel-guacamole/arch/arm64/boot/Image.gz-dtb
         if-no-files-found: warn
+
     - name: Upload build log
       if: always()
       uses: actions/upload-artifact@v4
