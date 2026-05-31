@@ -45,7 +45,8 @@ jobs:
         make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- \
           KCFLAGS="-Wno-error -Wno-designated-init -Wno-maybe-uninitialized \
                    -Wno-format -Wno-return-type -Wno-implicit-int \
-                   -Wno-misleading-indentation -U__FORTIFY_SOURCE" \
+                   -Wno-misleading-indentation -Wno-strict-prototypes \
+                   -U__FORTIFY_SOURCE" \
           -j$(nproc) 2>&1 | tee build.log || true
         tail -20 build.log
     - name: Upload kernel image
