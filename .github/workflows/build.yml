@@ -29,7 +29,6 @@ jobs:
     - name: Apply patches and config
       run: |
         cd kernel-guacamole
-        git apply ../kernel-patches.diff || true
         cp ../kernel-config-backup .config
 
         # ── Add missing DroidSpaces config flags ──────────────────────────
@@ -55,7 +54,10 @@ jobs:
 
         make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- olddefconfig
 
-        # ── Fix OnePlus gaming mode undefined linker symbols ──────────────
+        # ── Remove opslalib (creates circular deps + undefined symbols) ───
+        sed -i 's/ opslalib\///' Makefile
+
+        # ── Stub OnePlus gaming/sla undefined symbols at link ─────────────
         printf "\nint game_start_state = 0;\nint game_rtt_wan_detect_flag = 0;\nint rtt_rear = 0;\nint sla_switch_enable = 0;\n" \
           >> net/opsla/op_sla.c
 
@@ -101,10 +103,6 @@ jobs:
           >> drivers/tri_state_key/Makefile
         echo "ccflags-y += -Wno-strict-prototypes" \
           >> drivers/tri_state_key/ist_hall_ic/Makefile
-
-        # ── Fix OnePlus SLA undefined symbols at link ────────────────────
-        printf "\nint game_start_state = 0;\nint game_rtt_wan_detect_flag = 0;\nint rtt_rear = 0;\nint sla_switch_enable = 0;\n" \
-          >> net/opsla/op_sla.c
 
         # ── Fix .bss.rtic relocation truncation ─────────────────────────
         # RTIC has no Kconfig — null out the section attribute so selinux
