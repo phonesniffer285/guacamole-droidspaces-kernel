@@ -97,7 +97,8 @@ jobs:
           >> net/opsla/op_sla.c
 
         # ── Fix proc_page_hot_count_operations undefined ─────────────────
-        sed -i '3410i const struct file_operations proc_page_hot_count_operations = {};' \
+        # Insert stub at file scope before the array that references it
+        sed -i '3288i const struct file_operations proc_page_hot_count_operations = { };' \
           fs/proc/base.c
 
     - name: Build kernel
