@@ -501,3 +501,69 @@ index e7b11af1d..2c70480ca 100644
  net-y		:= net/
  libs-y		:= lib/
  core-y		:= usr/
+
+diff --git i/scripts/dtc/dtc-lexer.l w/scripts/dtc/dtc-lexer.l
+index c60060304..bc40a01f7 100755
+--- i/scripts/dtc/dtc-lexer.l
++++ w/scripts/dtc/dtc-lexer.l
+@@ -38,7 +38,7 @@ LINECOMMENT	"//".*\n
+ #include "srcpos.h"
+ #include "dtc-parser.tab.h"
+ 
+-YYLTYPE yylloc;
++extern YYLTYPE yylloc;
+ extern bool treesource_error;
+
+ /* CAUTION: this will stop working if we ever use yyless() or yyunput() */
+
+diff --git i/scripts/dtc/dtc-lexer.lex.c_shipped w/scripts/dtc/dtc-lexer.lex.c_shipped
+index e0835ad4a..34d349e9a 100755
+--- i/scripts/dtc/dtc-lexer.lex.c_shipped
++++ w/scripts/dtc/dtc-lexer.lex.c_shipped
+@@ -646,7 +646,7 @@ char *yytext;
+ #include "srcpos.h"
+ #include "dtc-parser.tab.h"
+ 
+-YYLTYPE yylloc;
++extern YYLTYPE yylloc;
+ extern bool treesource_error;
+
+ /* CAUTION: this will stop working if we ever use yyless() or yyunput() */
+
+diff --git i/scripts/selinux/genheaders/genheaders.c w/scripts/selinux/genheaders/genheaders.c
+index fa48fabcb..3cc4893d9 100755
+--- i/scripts/selinux/genheaders/genheaders.c
++++ w/scripts/selinux/genheaders/genheaders.c
+@@ -9,7 +9,6 @@
+ #include <string.h>
+ #include <errno.h>
+ #include <ctype.h>
+-#include <sys/socket.h>
+
+ struct security_class_mapping {
+ 	const char *name;
+
+diff --git i/scripts/selinux/mdp/mdp.c w/scripts/selinux/mdp/mdp.c
+index ffe8179f5..c29fa4a62 100755
+--- i/scripts/selinux/mdp/mdp.c
++++ w/scripts/selinux/mdp/mdp.c
+@@ -32,7 +32,6 @@
+ #include <stdlib.h>
+ #include <unistd.h>
+ #include <string.h>
+-#include <sys/socket.h>
+
+ static void usage(char *name)
+ {
+
+diff --git i/security/selinux/include/classmap.h w/security/selinux/include/classmap.h
+index 05ecb689f..21e523cc3 100755
+--- i/security/selinux/include/classmap.h
++++ w/security/selinux/include/classmap.h
+@@ -1,5 +1,6 @@
+ /* SPDX-License-Identifier: GPL-2.0 */
+ #include <linux/capability.h>
++#include <linux/socket.h>
+
+ #define COMMON_FILE_SOCK_PERMS "ioctl", "read", "write", "create", \
+     "getattr", "setattr", "lock", "relabelfrom", "relabelto", "append", "map"
