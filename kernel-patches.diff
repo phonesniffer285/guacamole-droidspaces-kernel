@@ -462,6 +462,15 @@ index 7afbea512..19712a63d 100644
  
  obj-$(CONFIG_UCSI_ACPI)		+= ucsi_acpi.o
 +ccflags-y += -I$(src)
+diff --git i/drivers/media/platform/msm/camera/cam_isp/isp_hw_mgr/Makefile w/drivers/media/platform/msm/camera/cam_isp/isp_hw_mgr/Makefile
+index 1f7dc76b7..499deeda7 100644
+--- i/drivers/media/platform/msm/camera/cam_isp/isp_hw_mgr/Makefile
++++ w/drivers/media/platform/msm/camera/cam_isp/isp_hw_mgr/Makefile
+@@ -13,3 +13,4 @@ ccflags-y += -Idrivers/media/platform/msm/camera/cam_cpas/include
+ obj-$(CONFIG_SPECTRA_CAMERA) += hw_utils/ isp_hw/
+ obj-$(CONFIG_SPECTRA_CAMERA) += cam_isp_hw_mgr.o cam_ife_hw_mgr.o
+ 
++ccflags-y += -I$(src)
 diff --git i/include/linux/thread_info.h w/include/linux/thread_info.h
 index cf2862bd1..d7b82abff 100644
 --- i/include/linux/thread_info.h
