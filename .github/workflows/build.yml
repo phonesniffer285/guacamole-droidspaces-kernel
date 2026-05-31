@@ -48,8 +48,7 @@ jobs:
           --enable  NETFILTER_XT_MATCH_ADDRTYPE \
           --enable  NF_CONNTRACK_NETLINK \
           --enable  NF_NAT_REDIRECT \
-          --disable ANDROID_PARANOID_NETWORK \
-          --disable QCOM_RTIC
+          --disable ANDROID_PARANOID_NETWORK
 
         make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- olddefconfig
 
@@ -96,8 +95,13 @@ jobs:
         printf "\nint game_start_state = 0;\nint game_rtt_wan_detect_flag = 0;\nint rtt_rear = 0;\nint sla_switch_enable = 0;\n" \
           >> net/opsla/op_sla.c
 
+        # ── Fix .bss.rtic relocation truncation ─────────────────────────
+        # RTIC has no Kconfig — null out the section attribute so selinux
+        # vars go into regular .bss instead of far-away .bss.rtic
+        sed -i 's/#define __rticdata  __attribute__((section(".bss.rtic")))/#define __rticdata/' \
+          include/linux/init.h
+
         # ── Fix proc_page_hot_count_operations undefined ─────────────────
-        # Insert stub at file scope before the array that references it
         sed -i '3288i const struct file_operations proc_page_hot_count_operations = { };' \
           fs/proc/base.c
 
