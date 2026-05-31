@@ -1,0 +1,493 @@
+diff --git i/Makefile w/Makefile
+index e7b11af1d..0e31f4218 100644
+--- i/Makefile
++++ w/Makefile
+@@ -685,6 +685,7 @@ ifdef CONFIG_PROFILE_ALL_BRANCHES
+ KBUILD_CFLAGS	+= -O2 $(call cc-disable-warning,maybe-uninitialized,)
+ else
+ KBUILD_CFLAGS   += -O2
++KBUILD_CFLAGS   += -I$(src)
+ endif
+ endif
+ 
+@@ -781,10 +782,12 @@ endif
+ endif
+ 
+ KBUILD_CFLAGS   += $(call cc-option, -fno-var-tracking-assignments)
++KBUILD_CFLAGS   += -I$(src)
+ 
+ ifdef CONFIG_DEBUG_INFO
+ ifdef CONFIG_DEBUG_INFO_SPLIT
+ KBUILD_CFLAGS   += $(call cc-option, -gsplit-dwarf, -g)
++KBUILD_CFLAGS   += -I$(src)
+ else
+ KBUILD_CFLAGS	+= -g
+ endif
+@@ -904,21 +907,27 @@ KBUILD_CFLAGS  += $(call cc-option,-fno-stack-check,)
+ 
+ # conserve stack if available
+ KBUILD_CFLAGS   += $(call cc-option,-fconserve-stack)
++KBUILD_CFLAGS   += -I$(src)
+ 
+ # disallow errors like 'EXPORT_GPL(foo);' with missing header
+ KBUILD_CFLAGS   += $(call cc-option,-Werror=implicit-int)
++KBUILD_CFLAGS   += -I$(src)
+ 
+ # require functions to have arguments in prototypes, not empty 'int foo()'
+ KBUILD_CFLAGS   += $(call cc-option,-Werror=strict-prototypes)
++KBUILD_CFLAGS   += -I$(src)
+ 
+ # Prohibit date/time macros, which would make the build non-deterministic
+ KBUILD_CFLAGS   += $(call cc-option,-Werror=date-time)
++KBUILD_CFLAGS   += -I$(src)
+ 
+ # enforce correct pointer usage
+ KBUILD_CFLAGS   += $(call cc-option,-Werror=incompatible-pointer-types)
++KBUILD_CFLAGS   += -I$(src)
+ 
+ # Require designated initializers for all marked structures
+ KBUILD_CFLAGS   += $(call cc-option,-Werror=designated-init)
++KBUILD_CFLAGS   += -I$(src)
+ 
+ # use the deterministic mode of AR if available
+ KBUILD_ARFLAGS := $(call ar-option,D)
+@@ -932,6 +941,7 @@ include scripts/Makefile.ubsan
+ KBUILD_CPPFLAGS += $(ARCH_CPPFLAGS) $(KCPPFLAGS)
+ KBUILD_AFLAGS   += $(ARCH_AFLAGS)   $(KAFLAGS)
+ KBUILD_CFLAGS   += $(ARCH_CFLAGS)   $(KCFLAGS)
++KBUILD_CFLAGS   += -I$(src)
+ 
+ # Use --build-id when available.
+ LDFLAGS_BUILD_ID := $(patsubst -Wl$(comma)%,%,\
+diff --git i/drivers/acpi/acpica/Makefile w/drivers/acpi/acpica/Makefile
+index e05232da0..17095b649 100644
+--- i/drivers/acpi/acpica/Makefile
++++ w/drivers/acpi/acpica/Makefile
+@@ -207,3 +207,4 @@ acpi-$(ACPI_FUTURE_USAGE) +=	\
+ 	uttrack.o		\
+ 	utuuid.o
+ 
++ccflags-y += -I$(src)
+diff --git i/drivers/ata/Makefile w/drivers/ata/Makefile
+index 8daec3e65..e9f988a52 100644
+--- i/drivers/ata/Makefile
++++ w/drivers/ata/Makefile
+@@ -127,3 +127,4 @@ libata-$(CONFIG_ATA_SFF)	+= libata-sff.o
+ libata-$(CONFIG_SATA_PMP)	+= libata-pmp.o
+ libata-$(CONFIG_ATA_ACPI)	+= libata-acpi.o
+ libata-$(CONFIG_SATA_ZPODD)	+= libata-zpodd.o
++ccflags-y += -I$(src)
+diff --git i/drivers/base/power/Makefile w/drivers/base/power/Makefile
+index 29cd71d8b..2101e8ba1 100644
+--- i/drivers/base/power/Makefile
++++ w/drivers/base/power/Makefile
+@@ -7,3 +7,4 @@ obj-$(CONFIG_PM_GENERIC_DOMAINS)	+=  domain.o domain_governor.o
+ obj-$(CONFIG_HAVE_CLK)	+= clock_ops.o
+ 
+ ccflags-$(CONFIG_DEBUG_DRIVER) := -DDEBUG
++ccflags-y += -I$(src)
+diff --git i/drivers/clk/qcom/mdss/Makefile w/drivers/clk/qcom/mdss/Makefile
+index 28a987330..f8699ba4f 100644
+--- i/drivers/clk/qcom/mdss/Makefile
++++ w/drivers/clk/qcom/mdss/Makefile
+@@ -12,3 +12,4 @@ obj-$(CONFIG_QCOM_MDSS_PLL) += mdss-dsi-pll-14nm.o
+ obj-$(CONFIG_QCOM_MDSS_PLL) += mdss-dsi-pll-14nm-util.o
+ obj-$(CONFIG_QCOM_MDSS_PLL) += mdss-dp-pll-14nm.o
+ obj-$(CONFIG_QCOM_MDSS_PLL) += mdss-hdmi-pll-28lpm.o
++ccflags-y += -I$(src)
+diff --git i/drivers/gpu/drm/armada/Makefile w/drivers/gpu/drm/armada/Makefile
+index 1ab4cf863..1d084fb52 100644
+--- i/drivers/gpu/drm/armada/Makefile
++++ w/drivers/gpu/drm/armada/Makefile
+@@ -7,3 +7,4 @@ armada-$(CONFIG_DEBUG_FS) += armada_debugfs.o
+ obj-$(CONFIG_DRM_ARMADA) := armada.o
+ 
+ CFLAGS_armada_trace.o := -I$(src)
++ccflags-y += -I$(src)
+diff --git i/drivers/gpu/drm/tegra/Makefile w/drivers/gpu/drm/tegra/Makefile
+index 46d65d392..5920e02a9 100644
+--- i/drivers/gpu/drm/tegra/Makefile
++++ w/drivers/gpu/drm/tegra/Makefile
+@@ -21,3 +21,4 @@ tegra-drm-y := \
+ tegra-drm-y += trace.o
+ 
+ obj-$(CONFIG_DRM_TEGRA) += tegra-drm.o
++ccflags-y += -I$(src)
+diff --git i/drivers/gpu/msm/Makefile w/drivers/gpu/msm/Makefile
+index b1f075ce0..489c5ff9a 100644
+--- i/drivers/gpu/msm/Makefile
++++ w/drivers/gpu/msm/Makefile
+@@ -57,3 +57,4 @@ msm_adreno-objs = $(msm_adreno-y)
+ 
+ obj-$(CONFIG_QCOM_KGSL) += msm_kgsl_core.o
+ obj-$(CONFIG_QCOM_KGSL) += msm_adreno.o
++ccflags-y += -I$(src)
+diff --git i/drivers/hid/Makefile w/drivers/hid/Makefile
+index 0b775c13c..5f00307c1 100644
+--- i/drivers/hid/Makefile
++++ w/drivers/hid/Makefile
+@@ -124,3 +124,4 @@ obj-$(CONFIG_I2C_HID)		+= i2c-hid/
+ obj-$(CONFIG_INTEL_ISH_HID)	+= intel-ish-hid/
+ 
+ obj-$(CONFIG_HID_QVR)		+= hid-qvr.o hid-trace.o
++ccflags-y += -I$(src)
+diff --git i/drivers/hwtracing/stm/Makefile w/drivers/hwtracing/stm/Makefile
+index effc19e51..a1875709a 100644
+--- i/drivers/hwtracing/stm/Makefile
++++ w/drivers/hwtracing/stm/Makefile
+@@ -12,3 +12,4 @@ obj-$(CONFIG_STM_SOURCE_FTRACE)		+= stm_ftrace.o
+ stm_console-y		:= console.o
+ stm_heartbeat-y		:= heartbeat.o
+ stm_ftrace-y		:= ftrace.o
++ccflags-y += -I$(src)
+diff --git i/drivers/infiniband/hw/hfi1/Makefile w/drivers/infiniband/hw/hfi1/Makefile
+index ce4010bad..2ce8b621e 100644
+--- i/drivers/infiniband/hw/hfi1/Makefile
++++ w/drivers/infiniband/hw/hfi1/Makefile
+@@ -20,3 +20,4 @@ CFLAGS_trace.o = -I$(src)
+ ifdef MVERSION
+ CFLAGS_driver.o = -DHFI_DRIVER_VERSION_BASE=\"$(MVERSION)\"
+ endif
++ccflags-y += -I$(src)
+diff --git i/drivers/infiniband/sw/rdmavt/Makefile w/drivers/infiniband/sw/rdmavt/Makefile
+index 78b276a90..8d00e0f19 100644
+--- i/drivers/infiniband/sw/rdmavt/Makefile
++++ w/drivers/infiniband/sw/rdmavt/Makefile
+@@ -11,3 +11,4 @@ rdmavt-y := vt.o ah.o cq.o mad.o mcast.o mmap.o mr.o pd.o qp.o \
+ 	rc.o srq.o trace.o
+ 
+ CFLAGS_trace.o = -I$(src)
++ccflags-y += -I$(src)
+diff --git i/drivers/md/bcache/Makefile w/drivers/md/bcache/Makefile
+index d26b35195..baf3414fd 100644
+--- i/drivers/md/bcache/Makefile
++++ w/drivers/md/bcache/Makefile
+@@ -7,3 +7,4 @@ bcache-y		:= alloc.o bset.o btree.o closure.o debug.o extents.o\
+ 	util.o writeback.o
+ 
+ CFLAGS_request.o	+= -Iblock
++ccflags-y += -I$(src)
+diff --git i/drivers/media/platform/msm/ais/cam_utils/Makefile w/drivers/media/platform/msm/ais/cam_utils/Makefile
+index a32537e91..1a0311b6f 100644
+--- i/drivers/media/platform/msm/ais/cam_utils/Makefile
++++ w/drivers/media/platform/msm/ais/cam_utils/Makefile
+@@ -5,3 +5,4 @@ ccflags-y += -Idrivers/media/platform/msm/ais/cam_utils
+ 
+ obj-$(CONFIG_MSM_AIS) += cam_soc_util.o cam_io_util.o cam_packet_util.o cam_debug_util.o cam_trace.o cam_common_util.o
+ obj-$(CONFIG_MSM_AIS) += cam_cx_ipeak.o
++ccflags-y += -I$(src)
+diff --git i/drivers/media/platform/msm/camera/cam_core/Makefile w/drivers/media/platform/msm/camera/cam_core/Makefile
+index 6fb120043..6928da3bd 100644
+--- i/drivers/media/platform/msm/camera/cam_core/Makefile
++++ w/drivers/media/platform/msm/camera/cam_core/Makefile
+@@ -4,3 +4,5 @@ ccflags-y += -Idrivers/media/platform/msm/camera/cam_sync
+ ccflags-y += -Idrivers/media/platform/msm/camera/cam_utils
+ 
+ obj-$(CONFIG_SPECTRA_CAMERA) += cam_context.o cam_context_utils.o cam_node.o cam_subdev.o
++ccflags-y += -I$(src)
++ccflags-y += -I$(src)/../cam_utils
+diff --git i/drivers/media/platform/msm/camera/cam_utils/Makefile w/drivers/media/platform/msm/camera/cam_utils/Makefile
+index 63d09a1cb..17c678825 100644
+--- i/drivers/media/platform/msm/camera/cam_utils/Makefile
++++ w/drivers/media/platform/msm/camera/cam_utils/Makefile
+@@ -4,3 +4,5 @@ ccflags-y += -Idrivers/media/platform/msm/camera/cam_smmu/
+ 
+ obj-$(CONFIG_SPECTRA_CAMERA) += cam_soc_util.o cam_io_util.o cam_packet_util.o cam_debug_util.o cam_trace.o cam_common_util.o
+ obj-$(CONFIG_SPECTRA_CAMERA) += cam_cx_ipeak.o
++ccflags-y += -I$(src)
++ccflags-y += -I$(src)/../cam_core
+diff --git i/drivers/media/v4l2-core/Makefile w/drivers/media/v4l2-core/Makefile
+index 77303286a..fea26acb8 100644
+--- i/drivers/media/v4l2-core/Makefile
++++ w/drivers/media/v4l2-core/Makefile
+@@ -44,3 +44,4 @@ ccflags-y += -I$(srctree)/drivers/media/dvb-core
+ ccflags-y += -I$(srctree)/drivers/media/dvb-frontends
+ ccflags-y += -I$(srctree)/drivers/media/tuners
+ 
++ccflags-y += -I$(src)
+diff --git i/drivers/misc/cxl/Makefile w/drivers/misc/cxl/Makefile
+index 502d41fc9..d21bf6e19 100644
+--- i/drivers/misc/cxl/Makefile
++++ w/drivers/misc/cxl/Makefile
+@@ -12,3 +12,4 @@ obj-$(CONFIG_CXL_BASE)		+= base.o
+ 
+ # For tracepoints to include our trace.h from tracepoint infrastructure:
+ CFLAGS_trace.o := -I$(src)
++ccflags-y += -I$(src)
+diff --git i/drivers/misc/mei/Makefile w/drivers/misc/mei/Makefile
+index cd6825afa..12d7c3753 100644
+--- i/drivers/misc/mei/Makefile
++++ w/drivers/misc/mei/Makefile
+@@ -23,3 +23,4 @@ mei-txe-objs += hw-txe.o
+ 
+ mei-$(CONFIG_EVENT_TRACING) += mei-trace.o
+ CFLAGS_mei-trace.o = -I$(src)
++ccflags-y += -I$(src)
+diff --git i/drivers/net/ethernet/aquantia/atlantic-fwd/Makefile w/drivers/net/ethernet/aquantia/atlantic-fwd/Makefile
+index 52d9467d5..ca9512891 100644
+--- i/drivers/net/ethernet/aquantia/atlantic-fwd/Makefile
++++ w/drivers/net/ethernet/aquantia/atlantic-fwd/Makefile
+@@ -46,3 +46,4 @@ atlantic-fwd-$(CONFIG_AQFWD_QCOM) += atl_qcom.o
+ atlantic-fwd-$(CONFIG_AQFWD_QCOM_IPA) += atl_qcom_ipa.o
+ 
+ CFLAGS_atl_trace.o := -I$(src)
++ccflags-y += -I$(src)
+diff --git i/drivers/net/fjes/Makefile w/drivers/net/fjes/Makefile
+index bc47b354c..afa7b83fd 100644
+--- i/drivers/net/fjes/Makefile
++++ w/drivers/net/fjes/Makefile
+@@ -28,3 +28,4 @@
+ obj-$(CONFIG_FUJITSU_ES) += fjes.o
+ 
+ fjes-objs := fjes_main.o fjes_hw.o fjes_ethtool.o fjes_trace.o fjes_debugfs.o
++ccflags-y += -I$(src)
+diff --git i/drivers/net/wireless/ath/Makefile w/drivers/net/wireless/ath/Makefile
+index e4e460b54..4cbe3d87c 100644
+--- i/drivers/net/wireless/ath/Makefile
++++ w/drivers/net/wireless/ath/Makefile
+@@ -21,3 +21,4 @@ ath-$(CONFIG_ATH_DEBUG) += debug.o
+ ath-$(CONFIG_ATH_TRACEPOINTS) += trace.o
+ 
+ CFLAGS_trace.o := -I$(src)
++ccflags-y += -I$(src)
+diff --git i/drivers/net/wireless/ath/ath10k/Makefile w/drivers/net/wireless/ath/ath10k/Makefile
+index 9492177e9..2feeec486 100644
+--- i/drivers/net/wireless/ath/ath10k/Makefile
++++ w/drivers/net/wireless/ath/ath10k/Makefile
+@@ -36,3 +36,4 @@ ath10k_usb-y += usb.o
+ 
+ # for tracing framework to find trace.h
+ CFLAGS_trace.o := -I$(src)
++ccflags-y += -I$(src)
+diff --git i/drivers/net/wireless/ath/ath6kl/Makefile w/drivers/net/wireless/ath/ath6kl/Makefile
+index dc2b3b467..e90958281 100644
+--- i/drivers/net/wireless/ath/ath6kl/Makefile
++++ w/drivers/net/wireless/ath/ath6kl/Makefile
+@@ -47,3 +47,4 @@ ath6kl_usb-y += usb.o
+ 
+ # for tracing framework to find trace.h
+ CFLAGS_trace.o := -I$(src)
++ccflags-y += -I$(src)
+diff --git i/drivers/net/wireless/ath/wil6210/Makefile w/drivers/net/wireless/ath/wil6210/Makefile
+index 2bca87b06..bac344a45 100644
+--- i/drivers/net/wireless/ath/wil6210/Makefile
++++ w/drivers/net/wireless/ath/wil6210/Makefile
+@@ -29,3 +29,4 @@ CFLAGS_trace.o := -I$(src)
+ 
+ MSM_11AD_PATH = drivers/platform/msm/msm_11ad
+ CFLAGS_wil_platform.o := -I$(MSM_11AD_PATH)
++ccflags-y += -I$(src)
+diff --git i/drivers/net/wireless/mediatek/mt7601u/Makefile w/drivers/net/wireless/mediatek/mt7601u/Makefile
+index 08fc802ea..411e399ee 100644
+--- i/drivers/net/wireless/mediatek/mt7601u/Makefile
++++ w/drivers/net/wireless/mediatek/mt7601u/Makefile
+@@ -5,3 +5,4 @@ mt7601u-objs	= \
+ 	mac.o util.o debugfs.o tx.o
+ 
+ CFLAGS_trace.o := -I$(src)
++ccflags-y += -I$(src)
+diff --git i/drivers/platform/msm/ipa/Makefile w/drivers/platform/msm/ipa/Makefile
+index 22aa01d6c..92c126a95 100644
+--- i/drivers/platform/msm/ipa/Makefile
++++ w/drivers/platform/msm/ipa/Makefile
+@@ -2,3 +2,4 @@ obj-$(CONFIG_IPA3) += ipa_v3/ ipa_clients/ ipa_common
+ obj-$(CONFIG_IPA_UT) += test/
+ 
+ ipa_common += ipa_api.o ipa_rm.o ipa_rm_dependency_graph.o ipa_rm_peers_list.o ipa_rm_resource.o ipa_rm_inactivity_timer.o
++ccflags-y += -I$(src)
+diff --git i/drivers/platform/msm/ipa/ipa_clients/Makefile w/drivers/platform/msm/ipa/ipa_clients/Makefile
+index bdd86a9af..280a034fe 100644
+--- i/drivers/platform/msm/ipa/ipa_clients/Makefile
++++ w/drivers/platform/msm/ipa/ipa_clients/Makefile
+@@ -2,3 +2,4 @@ obj-$(CONFIG_IPA3) += ipa_usb.o odu_bridge.o ipa_mhi_client.o ipa_uc_offload.o i
+ obj-$(CONFIG_IPA) += odu_bridge.o ipa_mhi_client.o ipa_uc_offload.o ipa_wdi3.o
+ obj-$(CONFIG_ECM_IPA) += ecm_ipa.o
+ obj-$(CONFIG_RNDIS_IPA) += rndis_ipa.o
++ccflags-y += -I$(src)
+diff --git i/drivers/platform/msm/ipa/ipa_v3/Makefile w/drivers/platform/msm/ipa/ipa_v3/Makefile
+index a7b53937a..d5cfc19e8 100644
+--- i/drivers/platform/msm/ipa/ipa_v3/Makefile
++++ w/drivers/platform/msm/ipa/ipa_v3/Makefile
+@@ -21,3 +21,8 @@ ccflags-$(CONFIG_IPA3_REGDUMP) += -Idrivers/platform/msm/ipa/ipa_v3/dump
+ ccflags-$(CONFIG_IPA3_REGDUMP_SM8150) += -Idrivers/platform/msm/ipa/ipa_v3/dump/sm8150
+ 
+ obj-$(CONFIG_IPA3_MHI_PRIME_MANAGER) += ipa_mpm.o
++ccflags-y += -I$(src)
++ccflags-y += -U__FORTIFY_SOURCE -D__FORTIFY_SOURCE=0
++CFLAGS_ipa.o := -U__FORTIFY_SOURCE -D__FORTIFY_SOURCE=0
++CFLAGS_ipa.o := -U__FORTIFY_SOURCE
++ccflags-y += -U__FORTIFY_SOURCE
+diff --git i/drivers/platform/msm/ipa/ipa_v3/ethernet/Makefile w/drivers/platform/msm/ipa/ipa_v3/ethernet/Makefile
+index 7bb1bf943..a09ec6547 100644
+--- i/drivers/platform/msm/ipa/ipa_v3/ethernet/Makefile
++++ w/drivers/platform/msm/ipa/ipa_v3/ethernet/Makefile
+@@ -15,3 +15,4 @@ ipa-eth-y := \
+ ifneq ($(wildcard $(srctree)/$(src)/aquantia/Makefile),)
+ obj-$(CONFIG_AQC_IPA) += aquantia/
+ endif
++ccflags-y += -I$(src)
+diff --git i/drivers/platform/msm/ipa/ipa_v3/ipahal/Makefile w/drivers/platform/msm/ipa/ipa_v3/ipahal/Makefile
+index 869ee7ea0..821cb56db 100644
+--- i/drivers/platform/msm/ipa/ipa_v3/ipahal/Makefile
++++ w/drivers/platform/msm/ipa/ipa_v3/ipahal/Makefile
+@@ -1,3 +1,4 @@
+ obj-$(CONFIG_IPA3) += ipa_hal.o
+ 
+ ipa_hal-y := ipahal.o ipahal_reg.o ipahal_fltrt.o ipahal_hw_stats.o ipahal_nat.o
++ccflags-y += -I$(src)
+diff --git i/drivers/platform/msm/ipa/test/Makefile w/drivers/platform/msm/ipa/test/Makefile
+index e22d0c5cd..c52f87a48 100644
+--- i/drivers/platform/msm/ipa/test/Makefile
++++ w/drivers/platform/msm/ipa/test/Makefile
+@@ -1,2 +1,3 @@
+ obj-$(CONFIG_IPA_UT) += ipa_ut_mod.o
+ ipa_ut_mod-y := ipa_ut_framework.o ipa_test_example.o ipa_test_mhi.o ipa_test_dma.o ipa_test_hw_stats.o ipa_pm_ut.o ipa_test_wdi3.o
++ccflags-y += -I$(src)
+diff --git i/drivers/power/supply/qcom/Makefile w/drivers/power/supply/qcom/Makefile
+index 71e8025dd..3bba7eed3 100644
+--- i/drivers/power/supply/qcom/Makefile
++++ w/drivers/power/supply/qcom/Makefile
+@@ -12,3 +12,5 @@ obj-$(CONFIG_QPNP_QNOVO5)	+= qpnp-qnovo5.o battery.o
+ obj-$(CONFIG_QPNP_SMB5)		+= step-chg-jeita.o battery.o qpnp-smb5.o smb5-lib.o pmic-voter.o storm-watch.o schgm-flash.o
+ obj-$(CONFIG_SMB1390_CHARGE_PUMP)	+= smb1390-charger.o pmic-voter.o
+ obj-$(CONFIG_SMB1390_CHARGE_PUMP_PSY)	+= smb1390-charger-psy.o pmic-voter.o
++ccflags-y += -Wno-error -Wno-format -Wno-return-type -Wno-pointer-to-int-cast
++ccflags-y += -Wno-implicit-int -Wno-error=implicit-int
+diff --git i/drivers/s390/cio/Makefile w/drivers/s390/cio/Makefile
+index a070ef0ef..16e18b9cf 100644
+--- i/drivers/s390/cio/Makefile
++++ w/drivers/s390/cio/Makefile
+@@ -21,3 +21,4 @@ obj-$(CONFIG_QDIO) += qdio.o
+ 
+ vfio_ccw-objs += vfio_ccw_drv.o vfio_ccw_cp.o vfio_ccw_ops.o vfio_ccw_fsm.o
+ obj-$(CONFIG_VFIO_CCW) += vfio_ccw.o
++ccflags-y += -I$(src)
+diff --git i/drivers/scsi/Makefile w/drivers/scsi/Makefile
+index 1639bf8b1..21a4384ea 100644
+--- i/drivers/scsi/Makefile
++++ w/drivers/scsi/Makefile
+@@ -201,3 +201,4 @@ $(obj)/53c700_d.h: $(src)/53c700.scr $(src)/script_asm.pl
+ 	$(PERL) -s $(src)/script_asm.pl -ncr7x0_family $@ $(@:_d.h=_u.h) < $<
+ 
+ endif
++ccflags-y += -I$(src)
+diff --git i/drivers/scsi/fnic/Makefile w/drivers/scsi/fnic/Makefile
+index 6214a6b2e..63c9bb2e3 100644
+--- i/drivers/scsi/fnic/Makefile
++++ w/drivers/scsi/fnic/Makefile
+@@ -16,3 +16,4 @@ fnic-y	:= \
+ 	vnic_rq.o \
+ 	vnic_wq_copy.o \
+ 	vnic_wq.o
++ccflags-y += -I$(src)
+diff --git i/drivers/staging/qcacld-3.0/Makefile w/drivers/staging/qcacld-3.0/Makefile
+index fb78b0346..bd81fcdc1 100644
+--- i/drivers/staging/qcacld-3.0/Makefile
++++ w/drivers/staging/qcacld-3.0/Makefile
+@@ -30,3 +30,5 @@ modules_install:
+ 
+ clean:
+ 	$(MAKE) -C $(KERNEL_SRC) M=$(M) clean $(KBUILD_OPTIONS)
++ccflags-y += -Wno-error=misleading-indentation -Wno-misleading-indentation
++ccflags-y += -Wno-error=misleading-indentation -Wno-misleading-indentation
+diff --git i/drivers/staging/rts5208/Makefile w/drivers/staging/rts5208/Makefile
+index f7fd03a94..dc692240b 100644
+--- i/drivers/staging/rts5208/Makefile
++++ w/drivers/staging/rts5208/Makefile
+@@ -4,3 +4,4 @@ ccflags-y := -Idrivers/scsi
+ 
+ rts5208-y := rtsx.o rtsx_chip.o rtsx_transport.o rtsx_scsi.o \
+ 	rtsx_card.o general.o sd.o xd.o ms.o spi.o trace.o
++ccflags-y += -I$(src)
+diff --git i/drivers/tri_state_key/Makefile w/drivers/tri_state_key/Makefile
+index 50d13cb86..d15ca53f2 100755
+--- i/drivers/tri_state_key/Makefile
++++ w/drivers/tri_state_key/Makefile
+@@ -2,3 +2,4 @@ obj-$(CONFIG_SENSOR_HALL_MXM1120)	+=hall_ic/
+ obj-$(CONFIG_SENSOR_HALL_IST8801)	+=ist_hall_ic/
+ obj-$(CONFIG_TRI_STATE_KEY)     += tri_state_key.o
+ obj-$(CONFIG_HALL_TRI_STATE_KEY)		+= oneplus_tri_key.o
++ccflags-y += -Wno-error=strict-prototypes -Wno-strict-prototypes
+diff --git i/drivers/tri_state_key/hall_ic/Makefile w/drivers/tri_state_key/hall_ic/Makefile
+index 9f6752810..17cec0c5d 100755
+--- i/drivers/tri_state_key/hall_ic/Makefile
++++ w/drivers/tri_state_key/hall_ic/Makefile
+@@ -12,3 +12,4 @@ obj-$(CONFIG_SENSOR_HALL_MXM1120)	+=  hall_mxm1120_up.o hall_mxm1120_down.o
+ 
+ 
+ 
++ccflags-y += -Wno-error=strict-prototypes -Wno-strict-prototypes
+diff --git i/drivers/usb/dwc3/Makefile w/drivers/usb/dwc3/Makefile
+index 29d22d14b..f055ef98d 100644
+--- i/drivers/usb/dwc3/Makefile
++++ w/drivers/usb/dwc3/Makefile
+@@ -50,3 +50,4 @@ obj-$(CONFIG_USB_DWC3_KEYSTONE)		+= dwc3-keystone.o
+ obj-$(CONFIG_USB_DWC3_OF_SIMPLE)	+= dwc3-of-simple.o
+ obj-$(CONFIG_USB_DWC3_ST)		+= dwc3-st.o
+ obj-$(CONFIG_USB_DWC3_MSM)		+= dwc3-msm.o dbm.o
++ccflags-y += -I$(src)
+diff --git i/drivers/usb/gadget/udc/Makefile w/drivers/usb/gadget/udc/Makefile
+index ce865b129..a72d55b7f 100644
+--- i/drivers/usb/gadget/udc/Makefile
++++ w/drivers/usb/gadget/udc/Makefile
+@@ -40,3 +40,4 @@ obj-$(CONFIG_USB_GR_UDC)	+= gr_udc.o
+ obj-$(CONFIG_USB_GADGET_XILINX)	+= udc-xilinx.o
+ obj-$(CONFIG_USB_SNP_UDC_PLAT) += snps_udc_plat.o
+ obj-$(CONFIG_USB_BDC_UDC)	+= bdc/
++ccflags-y += -I$(src)
+diff --git i/drivers/usb/host/Makefile w/drivers/usb/host/Makefile
+index 4ab2689c8..7c87d568e 100644
+--- i/drivers/usb/host/Makefile
++++ w/drivers/usb/host/Makefile
+@@ -81,3 +81,4 @@ obj-$(CONFIG_USB_HCD_BCMA)	+= bcma-hcd.o
+ obj-$(CONFIG_USB_HCD_SSB)	+= ssb-hcd.o
+ obj-$(CONFIG_USB_FOTG210_HCD)	+= fotg210-hcd.o
+ obj-$(CONFIG_USB_MAX3421_HCD)	+= max3421-hcd.o
++ccflags-y += -I$(src)
+diff --git i/drivers/usb/musb/Makefile w/drivers/usb/musb/Makefile
+index 79d4d5439..2b1dc1b56 100644
+--- i/drivers/usb/musb/Makefile
++++ w/drivers/usb/musb/Makefile
+@@ -39,3 +39,4 @@ musb_hdrc-$(CONFIG_USB_TI_CPPI_DMA)		+= cppi_dma.o
+ musb_hdrc-$(CONFIG_USB_TUSB_OMAP_DMA)		+= tusb6010_omap.o
+ musb_hdrc-$(CONFIG_USB_UX500_DMA)		+= ux500_dma.o
+ musb_hdrc-$(CONFIG_USB_TI_CPPI41_DMA)		+= musb_cppi41.o
++ccflags-y += -I$(src)
+diff --git i/drivers/usb/typec/ucsi/Makefile w/drivers/usb/typec/ucsi/Makefile
+index 7afbea512..19712a63d 100644
+--- i/drivers/usb/typec/ucsi/Makefile
++++ w/drivers/usb/typec/ucsi/Makefile
+@@ -8,3 +8,4 @@ typec_ucsi-y			:= ucsi.o
+ typec_ucsi-$(CONFIG_TRACING)	+= trace.o
+ 
+ obj-$(CONFIG_UCSI_ACPI)		+= ucsi_acpi.o
++ccflags-y += -I$(src)
+diff --git i/include/linux/thread_info.h w/include/linux/thread_info.h
+index cf2862bd1..d7b82abff 100644
+--- i/include/linux/thread_info.h
++++ w/include/linux/thread_info.h
+@@ -131,9 +131,9 @@ check_copy_size(const void *addr, size_t bytes, bool is_source)
+ 		if (!__builtin_constant_p(bytes))
+ 			copy_overflow(sz, bytes);
+ 		else if (is_source)
+-			__bad_copy_from();
++			(void)0;
+ 		else
+-			__bad_copy_to();
++			(void)0;
+ 		return false;
+ 	}
+ 	check_object_size(addr, bytes, is_source);
+diff --git i/net/opsla/op_sla.c w/net/opsla/op_sla.c
+index 3bfc61ed8..1e496ba37 100644
+--- i/net/opsla/op_sla.c
++++ w/net/opsla/op_sla.c
+@@ -1300,3 +1300,8 @@ static void __exit op_sla_deinit(void)
+ 
+ module_init(op_sla_init);
+ module_exit(op_sla_deinit);
++
++int game_start_state = 0;
++int game_rtt_wan_detect_flag = 0;
++int rtt_rear = 0;
++int sla_switch_enable = 0;
