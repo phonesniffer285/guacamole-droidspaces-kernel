@@ -48,7 +48,8 @@ jobs:
           --enable  NETFILTER_XT_MATCH_ADDRTYPE \
           --enable  NF_CONNTRACK_NETLINK \
           --enable  NF_NAT_REDIRECT \
-          --disable ANDROID_PARANOID_NETWORK
+          --disable ANDROID_PARANOID_NETWORK \
+          --disable KALLSYMS_BASE_RELATIVE
 
         make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- olddefconfig
 
