@@ -103,6 +103,8 @@ jobs:
           >> drivers/tri_state_key/Makefile
         echo "ccflags-y += -Wno-strict-prototypes" \
           >> drivers/tri_state_key/ist_hall_ic/Makefile
+        echo "ccflags-y += -Wno-strict-prototypes" \
+          >> drivers/tri_state_key/hall_ic/Makefile
 
         # ── Fix .bss.rtic relocation truncation ─────────────────────────
         # RTIC has no Kconfig — null out the section attribute so selinux
