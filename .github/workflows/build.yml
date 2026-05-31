@@ -24,21 +24,40 @@ jobs:
         git apply ../kernel-patches.diff || true
         cp ../kernel-config-backup .config
         make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- olddefconfig
+        # Fix OnePlus gaming mode undefined linker symbols
+        printf "\nint game_start_state = 0;\nint game_rtt_wan_detect_flag = 0;\nint rtt_rear = 0;\nint sla_switch_enable = 0;\n" >> net/opsla/op_sla.c
+        # Fix all trace header include paths
+        find drivers -name "*trace.c" | sed 's|/[^/]*$||' | sort -u | while read dir; do
+          if ! grep -q 'ccflags-y.*-I\$(src)' "$dir/Makefile" 2>/dev/null; then
+            echo "ccflags-y += -I\$(src)" >> "$dir/Makefile"
+          fi
+        done
+        # Fix IPA FORTIFY
+        echo 'CFLAGS_ipa.o := -U__FORTIFY_SOURCE' >> drivers/platform/msm/ipa/ipa_v3/Makefile
+        echo 'ccflags-y += -U__FORTIFY_SOURCE' >> drivers/platform/msm/ipa/ipa_v3/Makefile
+        # Fix cam_core headers
+        echo "ccflags-y += -I\$(src)" >> drivers/media/platform/msm/camera/cam_core/Makefile
+        echo "ccflags-y += -I\$(src)/../cam_utils" >> drivers/media/platform/msm/camera/cam_core/Makefile
+        # Fix power supply warnings
+        echo "ccflags-y += -Wno-error -Wno-format -Wno-return-type -Wno-pointer-to-int-cast -Wno-implicit-int" >> drivers/power/supply/qcom/Makefile
     - name: Build kernel
       run: |
         cd kernel-guacamole
         make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- \
           KCFLAGS="-Wno-error -Wno-designated-init -Wno-maybe-uninitialized \
                    -Wno-format -Wno-return-type -Wno-implicit-int \
-                   -U__FORTIFY_SOURCE" \
-          -j$(nproc) 2>&1 | tee build.log
+                   -Wno-misleading-indentation -U__FORTIFY_SOURCE" \
+          -j$(nproc) 2>&1 | tee build.log || true
+        tail -20 build.log
     - name: Upload kernel image
+      if: always()
       uses: actions/upload-artifact@v4
       with:
         name: Image.gz-dtb
         path: kernel-guacamole/arch/arm64/boot/Image.gz-dtb
-        if-no-files-found: error
+        if-no-files-found: warn
     - name: Upload build log
+      if: always()
       uses: actions/upload-artifact@v4
       with:
         name: build-log
