@@ -478,16 +478,4 @@ index cf2862bd1..d7b82abff 100644
  		return false;
  	}
  	check_object_size(addr, bytes, is_source);
-diff --git i/net/opsla/op_sla.c w/net/opsla/op_sla.c
-index 3bfc61ed8..1e496ba37 100644
---- i/net/opsla/op_sla.c
-+++ w/net/opsla/op_sla.c
-@@ -1300,3 +1300,8 @@ static void __exit op_sla_deinit(void)
- 
- module_init(op_sla_init);
- module_exit(op_sla_deinit);
-+
-+int game_start_state = 0;
-+int game_rtt_wan_detect_flag = 0;
-+int rtt_rear = 0;
-+int sla_switch_enable = 0;
+
