@@ -48,8 +48,10 @@ jobs:
           --enable  NETFILTER_XT_MATCH_ADDRTYPE \
           --enable  NF_CONNTRACK_NETLINK \
           --enable  NF_NAT_REDIRECT \
-          --disable ANDROID_PARANOID_NETWORK \
-          --disable KALLSYMS_BASE_RELATIVE
+          --disable ANDROID_PARANOID_NETWORK
+
+        # KALLSYMS_BASE_RELATIVE has default y on arm64 — force it n
+        sed -i '/^config KALLSYMS_BASE_RELATIVE$/,/^[a-z]/s/default.*/default n/' init/Kconfig
 
         make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- olddefconfig
 
