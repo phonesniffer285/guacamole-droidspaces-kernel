@@ -85,6 +85,16 @@ jobs:
         echo "ccflags-y += -Wno-error -Wno-format -Wno-return-type -Wno-pointer-to-int-cast -Wno-implicit-int" \
           >> drivers/power/supply/qcom/Makefile
 
+        # ── Fix hall sensor strict-prototypes ────────────────────────────
+        echo "ccflags-y += -Wno-strict-prototypes" \
+          >> drivers/tri_state_key/Makefile
+        echo "ccflags-y += -Wno-strict-prototypes" \
+          >> drivers/tri_state_key/ist_hall_ic/Makefile
+
+        # ── Fix OnePlus SLA undefined symbols at link ────────────────────
+        printf "\nint game_start_state = 0;\nint game_rtt_wan_detect_flag = 0;\nint rtt_rear = 0;\nint sla_switch_enable = 0;\n" \
+          >> net/opsla/op_sla.c
+
     - name: Build kernel
       run: |
         cd kernel-guacamole
@@ -93,6 +103,7 @@ jobs:
           KCFLAGS="-Wno-error -Wno-designated-init -Wno-maybe-uninitialized \
                    -Wno-format -Wno-return-type -Wno-implicit-int \
                    -Wno-misleading-indentation -U__FORTIFY_SOURCE" \
+          LDFLAGS_vmlinux="-z notext" \
           -j$(nproc) 2>&1 | tee build.log
         echo "--- LAST 30 LINES ---"
         tail -30 build.log
