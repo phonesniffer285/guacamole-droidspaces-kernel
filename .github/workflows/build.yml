@@ -33,6 +33,7 @@ jobs:
                    -Wno-format -Wno-return-type -Wno-implicit-int \
                    -Wno-misleading-indentation -Wno-strict-prototypes \
                    -U__FORTIFY_SOURCE" \
+          LDFLAGS_vmlinux="-z notext" \
           -j$(nproc) 2>&1 | tee build.log || true
         tail -20 build.log
     - name: Upload kernel image
