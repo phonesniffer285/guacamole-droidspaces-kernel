@@ -77,6 +77,14 @@ jobs:
           fi
         done
 
+        # ── Fix mdss pll trace header ─────────────────────────────────────
+        # kernel-patches.diff has stale mdss Makefile context; patch gets
+        # silently skipped by git apply. The find-for-trace.c misses it too
+        # (only .h, no trace.c). Fix explicitly:
+        if ! grep -q 'ccflags-y.*-I\$(src)' drivers/clk/qcom/mdss/Makefile 2>/dev/null; then
+          echo "ccflags-y += -I\$(src)" >> drivers/clk/qcom/mdss/Makefile
+        fi
+
         # ── Fix camera core headers ───────────────────────────────────────
         echo "ccflags-y += -I\$(src)"             >> drivers/media/platform/msm/camera/cam_core/Makefile
         echo "ccflags-y += -I\$(src)/../cam_utils" >> drivers/media/platform/msm/camera/cam_core/Makefile
