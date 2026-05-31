@@ -12,7 +12,7 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y bc build-essential libncurses5-dev \
           libssl-dev xz-utils git bison flex libelf-dev python3 \
-          aarch64-linux-gnu-gcc binutils-aarch64-linux-gnu
+          gcc-aarch64-linux-gnu binutils-aarch64-linux-gnu
     - name: Clone kernel source
       run: |
         git clone --depth=1 -b lineage-17.1 \
