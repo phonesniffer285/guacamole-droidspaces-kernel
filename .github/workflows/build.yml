@@ -1,1 +1,45 @@
-404: Not Found
+name: Build Guacamole Kernel (Droidspaces)
+on:
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    steps:
+    - name: Checkout this repo
+      uses: actions/checkout@v4
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y bc build-essential libncurses5-dev \
+          libssl-dev xz-utils git bison flex libelf-dev python3 \
+          aarch64-linux-gnu-gcc binutils-aarch64-linux-gnu
+    - name: Clone kernel source
+      run: |
+        git clone --depth=1 -b lineage-17.1 \
+          https://github.com/LineageOS/android_kernel_oneplus_sm8150 \
+          kernel-guacamole
+    - name: Apply patches and config
+      run: |
+        cd kernel-guacamole
+        git apply ../kernel-patches.diff || true
+        cp ../kernel-config-backup .config
+        make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- olddefconfig
+    - name: Build kernel
+      run: |
+        cd kernel-guacamole
+        make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- \
+          KCFLAGS="-Wno-error -Wno-designated-init -Wno-maybe-uninitialized \
+                   -Wno-format -Wno-return-type -Wno-implicit-int \
+                   -U__FORTIFY_SOURCE" \
+          -j$(nproc) 2>&1 | tee build.log
+    - name: Upload kernel image
+      uses: actions/upload-artifact@v4
+      with:
+        name: Image.gz-dtb
+        path: kernel-guacamole/arch/arm64/boot/Image.gz-dtb
+        if-no-files-found: error
+    - name: Upload build log
+      uses: actions/upload-artifact@v4
+      with:
+        name: build-log
+        path: kernel-guacamole/build.log
