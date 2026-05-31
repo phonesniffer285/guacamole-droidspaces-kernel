@@ -24,22 +24,21 @@ jobs:
         git apply ../kernel-patches.diff || true
         cp ../kernel-config-backup .config
         make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- olddefconfig
-        # Fix OnePlus gaming mode undefined linker symbols
-        printf "\nint game_start_state = 0;\nint game_rtt_wan_detect_flag = 0;\nint rtt_rear = 0;\nint sla_switch_enable = 0;\n" >> net/opsla/op_sla.c
-        # Fix all trace header include paths
+        # Fix trace header include paths
         find drivers -name "*trace.c" | sed 's|/[^/]*$||' | sort -u | while read dir; do
           if ! grep -q 'ccflags-y.*-I\$(src)' "$dir/Makefile" 2>/dev/null; then
             echo "ccflags-y += -I\$(src)" >> "$dir/Makefile"
           fi
         done
-        # Fix IPA FORTIFY
+        # Fix IPA FORTIFY_SOURCE
         echo 'CFLAGS_ipa.o := -U__FORTIFY_SOURCE' >> drivers/platform/msm/ipa/ipa_v3/Makefile
         echo 'ccflags-y += -U__FORTIFY_SOURCE' >> drivers/platform/msm/ipa/ipa_v3/Makefile
-        # Fix cam_core headers
-        echo "ccflags-y += -I\$(src)" >> drivers/media/platform/msm/camera/cam_core/Makefile
-        echo "ccflags-y += -I\$(src)/../cam_utils" >> drivers/media/platform/msm/camera/cam_core/Makefile
-        # Fix power supply warnings
+        # Fix camera ISP include paths
+        echo "ccflags-y += -I\$(src)" >> drivers/media/platform/msm/camera/cam_isp/isp_hw_mgr/Makefile
+        # Fix power supply warnings-as-errors
         echo "ccflags-y += -Wno-error -Wno-format -Wno-return-type -Wno-pointer-to-int-cast -Wno-implicit-int" >> drivers/power/supply/qcom/Makefile
+        # Verify config
+        grep -E 'PID_NS|IPC_NS|UTS_NS|TUN=|VETH=|SPECTRA_CAMERA' .config
     - name: Build kernel
       run: |
         cd kernel-guacamole
