@@ -488,3 +488,16 @@ index cf2862bd1..d7b82abff 100644
  	}
  	check_object_size(addr, bytes, is_source);
 
+diff --git i/Makefile w/Makefile
+index e7b11af1d..2c70480ca 100644
+--- i/Makefile
++++ w/Makefile
+@@ -583,7 +583,7 @@ scripts: scripts_basic include/config/auto.conf include/config/tristate.conf \
+ 
+ # Objects we will link into vmlinux / subdirs we need to visit
+ init-y		:= init/
+-drivers-y	:= drivers/ sound/ firmware/ coretech/ opslalib/ techpack/
++drivers-y	:= drivers/ sound/ firmware/ coretech/ techpack/
+ net-y		:= net/
+ libs-y		:= lib/
+ core-y		:= usr/
