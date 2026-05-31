@@ -116,6 +116,13 @@ jobs:
         sed -i '3288i const struct file_operations proc_page_hot_count_operations = { };' \
           fs/proc/base.c
 
+        # ── Nullify __bad_copy_to/from in thread_info.h ───────────────────
+        # kernel-patches.diff has stale context for this file; git apply
+        # silently skips it. FORTIFY_SOURCE checks in old IPA code trigger
+        # compile-time errors from these stub functions.
+        sed -i 's/__bad_copy_from();/(void)0;/g' include/linux/thread_info.h
+        sed -i 's/__bad_copy_to();/(void)0;/g'   include/linux/thread_info.h
+
     - name: Build kernel
       run: |
         cd kernel-guacamole
