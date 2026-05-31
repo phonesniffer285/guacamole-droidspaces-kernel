@@ -22,9 +22,11 @@ jobs:
       run: |
         cd kernel-guacamole
         git apply ../kernel-patches.diff || true
+        sed -i 's/#define __rticdata  __attribute__((section(".bss.rtic")))/#define __rticdata/' \
+          include/linux/init.h
         cp ../kernel-config-backup .config
         make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- olddefconfig
-        grep -E 'PID_NS|IPC_NS|UTS_NS|TUN=|VETH=|SPECTRA_CAMERA' .config
+        grep -E 'PID_NS|IPC_NS|UTS_NS|TUN=|VETH=|SPECTRA_CAMERA|PAGE_OWNER|STMVL53L1' .config
     - name: Build kernel
       run: |
         cd kernel-guacamole
