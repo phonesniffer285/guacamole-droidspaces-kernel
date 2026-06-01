@@ -60,8 +60,8 @@ jobs:
           CLANG_TRIPLE=aarch64-linux-gnu- \
           CROSS_COMPILE=aarch64-linux-gnu- olddefconfig
 
-        # ── Remove -Werror (clang has stricter warnings than GCC) ────────
-        sed -i 's/-Werror[^ ]*//g' Makefile
+        # ── Override -Werror (clang has stricter warnings than GCC) ───────
+        echo 'KBUILD_CFLAGS += -Wno-error' >> Makefile
 
         # ── Remove opslalib (creates circular deps + undefined symbols) ───
         sed -i 's/ opslalib\///' Makefile
