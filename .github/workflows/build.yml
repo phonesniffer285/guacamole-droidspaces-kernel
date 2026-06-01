@@ -14,11 +14,8 @@ jobs:
         sudo apt-get install -y \
           bc build-essential libncurses5-dev libssl-dev \
           xz-utils git bison flex libelf-dev python3 \
-          gcc-12 gcc-12-aarch64-linux-gnu \
+          clang lld \
           gcc-aarch64-linux-gnu binutils-aarch64-linux-gnu
-        # Force GCC 12 — GCC 15 breaks kallsyms on 4.14 kernels
-        sudo update-alternatives --install /usr/bin/aarch64-linux-gnu-gcc \
-          aarch64-linux-gnu-gcc /usr/bin/aarch64-linux-gnu-gcc-12 100 || true
 
     - name: Clone kernel source
       run: |
@@ -52,7 +49,8 @@ jobs:
         # KALLSYMS_BASE_RELATIVE has default y on arm64 — force it n
         sed -i '/^config KALLSYMS_BASE_RELATIVE$/,/^[a-z]/s/default.*/default n/' init/Kconfig
 
-        make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- olddefconfig
+        make ARCH=arm64 CC=clang CLANG_TRIPLE=aarch64-linux-gnu- \
+          CROSS_COMPILE=aarch64-linux-gnu- olddefconfig
 
         # ── Remove opslalib (creates circular deps + undefined symbols) ───
         sed -i 's/ opslalib\///' Makefile
@@ -127,6 +125,7 @@ jobs:
       run: |
         cd kernel-guacamole
         make ARCH=arm64 \
+          CC=clang CLANG_TRIPLE=aarch64-linux-gnu- \
           CROSS_COMPILE=aarch64-linux-gnu- \
           KCFLAGS="-Wno-error -Wno-designated-init -Wno-maybe-uninitialized \
                    -Wno-format -Wno-return-type -Wno-implicit-int \
