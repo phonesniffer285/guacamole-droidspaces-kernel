@@ -128,7 +128,7 @@ jobs:
           CC="clang -B/usr/bin/aarch64-linux-gnu-" \
           CLANG_TRIPLE=aarch64-linux-gnu- \
           CROSS_COMPILE=aarch64-linux-gnu- \
-          KCFLAGS="-Wno-error -Wno-designated-init -Wno-maybe-uninitialized \
+          KCFLAGS="-Wno-error=unknown-warning-option \
                    -Wno-format -Wno-return-type -Wno-implicit-int \
                    -Wno-misleading-indentation -U__FORTIFY_SOURCE" \
           LDFLAGS_vmlinux="-z notext" \
