@@ -49,12 +49,12 @@ jobs:
         # KALLSYMS_BASE_RELATIVE has default y on arm64 — force it n
         sed -i '/^config KALLSYMS_BASE_RELATIVE$/,/^[a-z]/s/default.*/default n/' init/Kconfig
 
-        make ARCH=arm64 CC=clang CLANG_TRIPLE=aarch64-linux-gnu- \
+        make ARCH=arm64 CC="clang -integrated-as" CLANG_TRIPLE=aarch64-linux-gnu- \
           CROSS_COMPILE=aarch64-linux-gnu- olddefconfig
 
         # ── Clang on Ubuntu 22.04 fails CC_STACKPROTECTOR_STRONG check ────
         sed -i '/CONFIG_CC_STACKPROTECTOR_STRONG/d' .config
-        make ARCH=arm64 CC=clang CLANG_TRIPLE=aarch64-linux-gnu- \
+        make ARCH=arm64 CC="clang -integrated-as" CLANG_TRIPLE=aarch64-linux-gnu- \
           CROSS_COMPILE=aarch64-linux-gnu- olddefconfig
 
         # ── Remove opslalib (creates circular deps + undefined symbols) ───
@@ -130,7 +130,7 @@ jobs:
       run: |
         cd kernel-guacamole
         make ARCH=arm64 \
-          CC=clang CLANG_TRIPLE=aarch64-linux-gnu- \
+          CC="clang -integrated-as" CLANG_TRIPLE=aarch64-linux-gnu- \
           CROSS_COMPILE=aarch64-linux-gnu- \
           KCFLAGS="-Wno-error -Wno-designated-init -Wno-maybe-uninitialized \
                    -Wno-format -Wno-return-type -Wno-implicit-int \
