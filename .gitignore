@@ -1,0 +1,12 @@
+*.o
+*.cmd
+*.a
+*.ko
+*.mod.c
+*.order
+*.symvers
+*.tmp_versions
+*~
+#*#
+.vscode/
+__pycache__/

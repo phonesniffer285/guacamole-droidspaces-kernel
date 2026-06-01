@@ -1,0 +1,162 @@
+name: Build Guacamole Kernel (Droidspaces)
+on:
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    steps:
+    - name: Checkout this repo
+      uses: actions/checkout@v4
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          bc build-essential libncurses5-dev libssl-dev \
+          xz-utils git bison flex libelf-dev python3
+
+    - name: Download NDK toolchain (same as LineageOS uses)
+      run: |
+        git clone --depth=1 -b lineage-20.0 \
+          https://github.com/LineageOS/android_prebuilts_clang_kernel_linux-x86_clang-r416183b \
+          ndk-clang
+        git clone --depth=1 -b lineage-19.1 \
+          https://github.com/LineageOS/android_prebuilts_gcc_linux-x86_aarch64_aarch64-linux-android-4.9 \
+          ndk-gcc
+        # Add both to PATH
+        echo "$(pwd)/ndk-clang/bin" >> $GITHUB_PATH
+        echo "$(pwd)/ndk-gcc/bin" >> $GITHUB_PATH
+
+    - name: Clone kernel source
+      run: |
+        git clone --depth=1 -b lineage-17.1 \
+          https://github.com/LineageOS/android_kernel_oneplus_sm8150 \
+          kernel-guacamole
+
+    - name: Apply patches and config
+      run: |
+        cd kernel-guacamole
+        cp ../kernel-config-backup .config
+
+        # ── Add missing DroidSpaces config flags ──────────────────────────
+        scripts/config \
+          --enable  POSIX_MQUEUE \
+          --enable  CGROUP_PIDS \
+          --enable  CGROUP_DEVICE \
+          --enable  CGROUP_NET_PRIO \
+          --enable  DEVTMPFS \
+          --enable  DEVTMPFS_MOUNT \
+          --enable  NF_TABLES \
+          --enable  NETFILTER_ADVANCED \
+          --enable  IP_NF_FILTER \
+          --enable  NETFILTER_XT_TARGET_MASQUERADE \
+          --enable  NETFILTER_XT_TARGET_TCPMSS \
+          --enable  NETFILTER_XT_MATCH_ADDRTYPE \
+          --enable  NF_CONNTRACK_NETLINK \
+          --enable  NF_NAT_REDIRECT \
+          --disable ANDROID_PARANOID_NETWORK
+
+        # KALLSYMS_BASE_RELATIVE has default y on arm64 — force it n
+        sed -i '/^config KALLSYMS_BASE_RELATIVE$/,/^[a-z]/s/default.*/default n/' init/Kconfig
+
+        # ── Disable CC_STACKPROTECTOR_STRONG (clang check fails) ──────────
+        sed -i '/CONFIG_CC_STACKPROTECTOR_STRONG/d' .config
+
+        # Configure with NDK clang
+        make ARCH=arm64 \
+          CC=clang CLANG_TRIPLE=aarch64-linux-gnu- \
+          CROSS_COMPILE=aarch64-linux-android- \
+          olddefconfig
+
+        # ── Remove opslalib (creates circular deps + undefined symbols) ───
+        sed -i 's/ opslalib\///' Makefile
+
+        # ── Stub OnePlus gaming/sla undefined symbols at link ─────────────
+        printf "\nint game_start_state = 0;\nint game_rtt_wan_detect_flag = 0;\nint rtt_rear = 0;\nint sla_switch_enable = 0;\n" \
+          >> net/opsla/op_sla.c
+
+        # ── Fix all trace header include paths ────────────────────────────
+        find drivers -name "*trace.c" | sed 's|/[^/]*$||' | sort -u | while read dir; do
+          if ! grep -q 'ccflags-y.*-I\$(src)' "$dir/Makefile" 2>/dev/null; then
+            echo "ccflags-y += -I\$(src)" >> "$dir/Makefile"
+          fi
+        done
+
+        # ── Fix IPA FORTIFY_SOURCE ────────────────────────────────────────
+        echo 'CFLAGS_ipa.o := -U__FORTIFY_SOURCE' >> drivers/platform/msm/ipa/ipa_v3/Makefile
+        echo 'ccflags-y += -U__FORTIFY_SOURCE'    >> drivers/platform/msm/ipa/ipa_v3/Makefile
+
+        # ── Fix IPA subdirectory trace headers ───────────────────────────
+        find drivers/platform/msm/ipa -name "Makefile" | while read f; do
+          if ! grep -q 'ccflags-y.*-I\$(src)' "$f"; then
+            echo "ccflags-y += -I\$(src)" >> "$f"
+          fi
+        done
+
+        # ── Fix mdss pll trace header ─────────────────────────────────────
+        if ! grep -q 'ccflags-y.*-I\$(src)' drivers/clk/qcom/mdss/Makefile 2>/dev/null; then
+          echo "ccflags-y += -I\$(src)" >> drivers/clk/qcom/mdss/Makefile
+        fi
+
+        # ── Fix camera core headers ───────────────────────────────────────
+        echo "ccflags-y += -I\$(src)"             >> drivers/media/platform/msm/camera/cam_core/Makefile
+        echo "ccflags-y += -I\$(src)/../cam_utils" >> drivers/media/platform/msm/camera/cam_core/Makefile
+
+        # ── Fix GPU msm trace headers ─────────────────────────────────────
+        echo "ccflags-y += -I\$(src)" >> drivers/gpu/msm/Makefile
+
+        # ── Fix power supply Qualcomm warnings ───────────────────────────
+        echo "ccflags-y += -Wno-error -Wno-format -Wno-return-type -Wno-pointer-to-int-cast -Wno-implicit-int" \
+          >> drivers/power/supply/qcom/Makefile
+
+        # ── Fix hall sensor strict-prototypes ────────────────────────────
+        echo "ccflags-y += -Wno-strict-prototypes" \
+          >> drivers/tri_state_key/Makefile
+        echo "ccflags-y += -Wno-strict-prototypes" \
+          >> drivers/tri_state_key/ist_hall_ic/Makefile
+        echo "ccflags-y += -Wno-strict-prototypes" \
+          >> drivers/tri_state_key/hall_ic/Makefile
+
+        # ── Fix .bss.rtic relocation truncation ─────────────────────────
+        sed -i 's/#define __rticdata  __attribute__((section(".bss.rtic")))/#define __rticdata/' \
+          include/linux/init.h
+
+        # ── Fix proc_page_hot_count_operations undefined ─────────────────
+        sed -i '3288i const struct file_operations proc_page_hot_count_operations = { };' \
+          fs/proc/base.c
+
+        # ── Nullify __bad_copy_to/from in thread_info.h ───────────────────
+        sed -i 's/__bad_copy_from();/(void)0;/g' include/linux/thread_info.h
+        sed -i 's/__bad_copy_to();/(void)0;/g'   include/linux/thread_info.h
+
+        # ── Override -Werror (clang has stricter warnings than GCC) ───────
+        echo 'KBUILD_CFLAGS += -Wno-error' >> Makefile
+
+    - name: Build kernel
+      run: |
+        cd kernel-guacamole
+        make ARCH=arm64 \
+          CC=clang CLANG_TRIPLE=aarch64-linux-gnu- \
+          CROSS_COMPILE=aarch64-linux-android- \
+          KCFLAGS="-Wno-error=unknown-warning-option \
+                   -Wno-format -Wno-return-type -Wno-implicit-int \
+                   -Wno-unused-but-set-variable -Wno-unused-variable \
+                   -U__FORTIFY_SOURCE" \
+          -j$(nproc) 2>&1 | tee build.log
+        echo "--- LAST 30 LINES ---"
+        tail -30 build.log
+
+    - name: Upload kernel image
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: Image.gz-dtb
+        path: kernel-guacamole/arch/arm64/boot/Image.gz-dtb
+        if-no-files-found: warn
+
+    - name: Upload build log
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: build-log
+        path: kernel-guacamole/build.log
