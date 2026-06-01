@@ -60,6 +60,9 @@ jobs:
           CLANG_TRIPLE=aarch64-linux-gnu- \
           CROSS_COMPILE=aarch64-linux-gnu- olddefconfig
 
+        # ── Remove -Werror (clang has stricter warnings than GCC) ────────
+        sed -i 's/-Werror//g' Makefile
+
         # ── Remove opslalib (creates circular deps + undefined symbols) ───
         sed -i 's/ opslalib\///' Makefile
 
@@ -132,6 +135,7 @@ jobs:
                    -Wno-error=unused-but-set-variable \
                    -Wno-error=unused-variable \
                    -Wno-error=unused-function \
+                   -Wno-error=void-pointer-to-enum-cast \
                    -Wno-format -Wno-return-type -Wno-implicit-int \
                    -Wno-misleading-indentation -U__FORTIFY_SOURCE" \
           LDFLAGS_vmlinux="-z notext" \
