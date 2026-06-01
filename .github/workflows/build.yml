@@ -15,7 +15,10 @@ jobs:
           bc build-essential libncurses5-dev libssl-dev \
           xz-utils git bison flex libelf-dev python3 \
           clang lld \
-          gcc-aarch64-linux-gnu binutils-aarch64-linux-gnu
+          gcc-12-aarch64-linux-gnu binutils-aarch64-linux-gnu
+        # Verify cross-assembler exists
+        which aarch64-linux-gnu-as
+        aarch64-linux-gnu-as --version | head -2
 
     - name: Clone kernel source
       run: |
@@ -49,12 +52,12 @@ jobs:
         # KALLSYMS_BASE_RELATIVE has default y on arm64 — force it n
         sed -i '/^config KALLSYMS_BASE_RELATIVE$/,/^[a-z]/s/default.*/default n/' init/Kconfig
 
-        make ARCH=arm64 CC="clang -integrated-as" CLANG_TRIPLE=aarch64-linux-gnu- \
-          CROSS_COMPILE=aarch64-linux-gnu- olddefconfig
-
-        # ── Clang on Ubuntu 22.04 fails CC_STACKPROTECTOR_STRONG check ────
+        # ── Disable CC_STACKPROTECTOR_STRONG (clang check fails) ──────────
         sed -i '/CONFIG_CC_STACKPROTECTOR_STRONG/d' .config
-        make ARCH=arm64 CC="clang -integrated-as" CLANG_TRIPLE=aarch64-linux-gnu- \
+
+        make ARCH=arm64 \
+          CC="clang -B/usr/bin/aarch64-linux-gnu-" \
+          CLANG_TRIPLE=aarch64-linux-gnu- \
           CROSS_COMPILE=aarch64-linux-gnu- olddefconfig
 
         # ── Remove opslalib (creates circular deps + undefined symbols) ───
@@ -83,9 +86,6 @@ jobs:
         done
 
         # ── Fix mdss pll trace header ─────────────────────────────────────
-        # kernel-patches.diff has stale mdss Makefile context; patch gets
-        # silently skipped by git apply. The find-for-trace.c misses it too
-        # (only .h, no trace.c). Fix explicitly:
         if ! grep -q 'ccflags-y.*-I\$(src)' drivers/clk/qcom/mdss/Makefile 2>/dev/null; then
           echo "ccflags-y += -I\$(src)" >> drivers/clk/qcom/mdss/Makefile
         fi
@@ -110,8 +110,6 @@ jobs:
           >> drivers/tri_state_key/hall_ic/Makefile
 
         # ── Fix .bss.rtic relocation truncation ─────────────────────────
-        # RTIC has no Kconfig — null out the section attribute so selinux
-        # vars go into regular .bss instead of far-away .bss.rtic
         sed -i 's/#define __rticdata  __attribute__((section(".bss.rtic")))/#define __rticdata/' \
           include/linux/init.h
 
@@ -120,9 +118,6 @@ jobs:
           fs/proc/base.c
 
         # ── Nullify __bad_copy_to/from in thread_info.h ───────────────────
-        # kernel-patches.diff has stale context for this file; git apply
-        # silently skips it. FORTIFY_SOURCE checks in old IPA code trigger
-        # compile-time errors from these stub functions.
         sed -i 's/__bad_copy_from();/(void)0;/g' include/linux/thread_info.h
         sed -i 's/__bad_copy_to();/(void)0;/g'   include/linux/thread_info.h
 
@@ -130,7 +125,8 @@ jobs:
       run: |
         cd kernel-guacamole
         make ARCH=arm64 \
-          CC="clang -integrated-as" CLANG_TRIPLE=aarch64-linux-gnu- \
+          CC="clang -B/usr/bin/aarch64-linux-gnu-" \
+          CLANG_TRIPLE=aarch64-linux-gnu- \
           CROSS_COMPILE=aarch64-linux-gnu- \
           KCFLAGS="-Wno-error -Wno-designated-init -Wno-maybe-uninitialized \
                    -Wno-format -Wno-return-type -Wno-implicit-int \
