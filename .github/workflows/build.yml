@@ -13,12 +13,19 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y \
           bc build-essential libncurses5-dev libssl-dev \
-          xz-utils git bison flex libelf-dev python3 \
-          clang lld \
-          gcc-12-aarch64-linux-gnu binutils-aarch64-linux-gnu
-        # Verify cross-assembler exists
-        which aarch64-linux-gnu-as
-        aarch64-linux-gnu-as --version | head -2
+          xz-utils git bison flex libelf-dev python3
+
+    - name: Download NDK toolchain (same as LineageOS uses)
+      run: |
+        git clone --depth=1 -b lineage-20.0 \
+          https://github.com/LineageOS/android_prebuilts_clang_kernel_linux-x86_clang-r416183b \
+          ndk-clang
+        git clone --depth=1 -b lineage-19.1 \
+          https://github.com/LineageOS/android_prebuilts_gcc_linux-x86_aarch64_aarch64-linux-android-4.9 \
+          ndk-gcc
+        # Add both to PATH
+        echo "$(pwd)/ndk-clang/bin" >> $GITHUB_PATH
+        echo "$(pwd)/ndk-gcc/bin" >> $GITHUB_PATH
 
     - name: Clone kernel source
       run: |
@@ -55,13 +62,11 @@ jobs:
         # ── Disable CC_STACKPROTECTOR_STRONG (clang check fails) ──────────
         sed -i '/CONFIG_CC_STACKPROTECTOR_STRONG/d' .config
 
+        # Configure with NDK clang
         make ARCH=arm64 \
-          CC="clang -B/usr/bin/aarch64-linux-gnu-" \
-          CLANG_TRIPLE=aarch64-linux-gnu- \
-          CROSS_COMPILE=aarch64-linux-gnu- olddefconfig
-
-        # ── Override -Werror (clang has stricter warnings than GCC) ───────
-        echo 'KBUILD_CFLAGS += -Wno-error' >> Makefile
+          CC=clang CLANG_TRIPLE=aarch64-linux-gnu- \
+          CROSS_COMPILE=aarch64-linux-android- \
+          olddefconfig
 
         # ── Remove opslalib (creates circular deps + undefined symbols) ───
         sed -i 's/ opslalib\///' Makefile
@@ -124,21 +129,19 @@ jobs:
         sed -i 's/__bad_copy_from();/(void)0;/g' include/linux/thread_info.h
         sed -i 's/__bad_copy_to();/(void)0;/g'   include/linux/thread_info.h
 
+        # ── Override -Werror (clang has stricter warnings than GCC) ───────
+        echo 'KBUILD_CFLAGS += -Wno-error' >> Makefile
+
     - name: Build kernel
       run: |
         cd kernel-guacamole
         make ARCH=arm64 \
-          CC="clang -B/usr/bin/aarch64-linux-gnu-" \
-          CLANG_TRIPLE=aarch64-linux-gnu- \
-          CROSS_COMPILE=aarch64-linux-gnu- \
+          CC=clang CLANG_TRIPLE=aarch64-linux-gnu- \
+          CROSS_COMPILE=aarch64-linux-android- \
           KCFLAGS="-Wno-error=unknown-warning-option \
-                   -Wno-error=unused-but-set-variable \
-                   -Wno-error=unused-variable \
-                   -Wno-error=unused-function \
-                   -Wno-error=void-pointer-to-enum-cast \
                    -Wno-format -Wno-return-type -Wno-implicit-int \
-                   -Wno-misleading-indentation -U__FORTIFY_SOURCE" \
-          LDFLAGS_vmlinux="-z notext" \
+                   -Wno-unused-but-set-variable -Wno-unused-variable \
+                   -U__FORTIFY_SOURCE" \
           -j$(nproc) 2>&1 | tee build.log
         echo "--- LAST 30 LINES ---"
         tail -30 build.log
