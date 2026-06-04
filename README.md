@@ -1,6 +1,6 @@
 # guacamole-droidspaces-kernel
 
-LineageOS 17.1 (Android 10) kernel for OnePlus 7 Pro (guacamole) with Droidspaces support — container namespaces, TUN/VETH, iptables MASQUERADE, loop devices, devtmpfs.
+(flash anykernel from releases its not rom specific so it will work on any rom) LineageOS 17.1 (Android 10) kernel for OnePlus 7 Pro (guacamole) with Droidspaces support — container namespaces, TUN/VETH, iptables MASQUERADE, loop devices, devtmpfs.
 
 ## What's here
 
